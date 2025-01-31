@@ -1,0 +1,18 @@
+#include <iostream>
+
+#include "ComadVersion.h"
+
+namespace comad {
+	Version GetLinkedVersion() {
+		return Version{
+			.major = ${COMAD_VERSION_MAJOR},
+			.minor = ${COMAD_VERSION_MINOR},
+			.patch = ${COMAD_VERSION_PATCH}
+		};
+	}
+
+	std::ostream& operator<<(std::ostream& stream, const Version& v) {
+		stream << v.major << '.' << v.minor << '.' << v.patch;
+		return stream;
+	};
+}

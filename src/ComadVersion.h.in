@@ -1,0 +1,26 @@
+﻿#ifndef COMAD_VERSION_H_
+#define COMAD_VERSION_H_
+
+#include <iostream>
+
+namespace comad {
+	struct Version {
+		short major;
+		short minor;
+		short patch;
+	};
+
+	inline Version GetSourceVersion() {
+		return Version{
+			.major = ${COMAD_VERSION_MAJOR},
+			.minor = ${COMAD_VERSION_MINOR},
+			.patch = ${COMAD_VERSION_PATCH}
+		};
+	};
+
+	Version GetLinkedVersion();
+
+	std::ostream& operator<<(std::ostream& stream, const Version& v);
+}
+
+#endif
