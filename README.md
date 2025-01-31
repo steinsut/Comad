@@ -12,8 +12,7 @@ int main(int argc, char** argv) {
 		if(argc > 3)//gotta check argument count
 		{
 			//this is a string argument
-			std::string_view bar1
-			//check if string is an acceptable value
+			std::string_view bar1{argv[2]}
 
 			//this is an integer argument
 			int bar2;
@@ -23,9 +22,6 @@ int main(int argc, char** argv) {
 			
 			//check if conversion was successful
 			if(result.ec == std::errc{}) return -1
-
-			//check if bar1 is between acceptable values
-			if(bar2 < 0 || bar2 > 100) return -1;
 
 			//parse the rest of the arguments
 			//parse options/flags
