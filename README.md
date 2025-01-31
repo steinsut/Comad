@@ -88,7 +88,7 @@ using command chains have public methods that can be used to interact with them.
 **NOTE: THERE MAY BE ANY NUMBER OF BREAKING CHANGES UNTIL 1.0**
 
 ## Installation
-Download from the releases tab, or build from source using CMake.
+Build and install from source using CMake.
 
 ## Usage
 The documentation will be available on a later version.
