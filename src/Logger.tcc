@@ -242,15 +242,12 @@ namespace comad::logger {
 	Logger<CharT, FmtTypes...>::Streamable<L>::~Streamable() {
 		if constexpr (L == LogLevel::DEBUG) {
 #ifdef NDEBUG
-			if (!logger_alive_.expired() && *logger_alive_.lock() && msg_buf_.view().size() > 0) {
-				logger_.Log<L>(msg_buf_.view(), loc_);
-			}
+			return;
 #endif
 		}
-		else {
-			if (!logger_alive_.expired() && *logger_alive_.lock()  && msg_buf_.view().size() > 0) {
-				logger_.Log<L>(msg_buf_.view(), loc_);
-			}
+
+		if (!logger_alive_.expired() && *logger_alive_.lock()  && msg_buf_.view().size() > 0) {
+			logger_.Log<L>(msg_buf_.view(), loc_);
 		}
 	}
 
@@ -296,16 +293,13 @@ namespace comad::logger {
 			return std::format(fmt_, specifiers...);
 		}, specifiers_);
 		if constexpr (L == LogLevel::DEBUG) {
-#ifndef NDEBUG
-			for (typename StreamsType::StreamRefWrapper s : streams_.template GetStreamsFromLevel<L>()) {
-				s.get() << formatted << '\n';
-			}
+#ifdef NDEBUG
+			return
 #endif
 		}
-		else {
-			for (typename StreamsType::StreamRefWrapper s: streams_.template GetStreamsFromLevel<L>()) {
-				s.get() << formatted << '\n';
-			}
+
+		for (typename StreamsType::StreamRefWrapper s: streams_.template GetStreamsFromLevel<L>()) {
+			s.get() << formatted << '\n';
 		}
 	}
 
