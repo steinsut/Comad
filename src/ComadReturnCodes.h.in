@@ -1,24 +1,22 @@
 #ifndef COMAD_ERROR_CODES
 #define COMAD_ERROR_CODES
 
-namespace comad {
-	namespace retc {
-		enum ErrorCodes {
-			kNoInput = ${COMAD_NO_INPUT},
-			kUnknownCommand = ${COMAD_UNKNOWN_COMMAND},
-			kUnknownFlag = ${COMAD_UNKNOWN_FLAG},
-			kDupeOption = ${COMAD_DUPE_OPTION},
-			kInvalidValueParse = ${COMAD_INVALID_VALUE_PARSE},
-			kInvalidOptionValue = ${COMAD_INVALID_OPTION_VALUE},
-			kUnknownOption = ${COMAD_UNKNOWN_OPTION},
-			kMissingRequiredOptions = ${COMAD_MISSING_REQUIRED_OPTIONS}
-		};
+namespace comad::retc {
+    enum ErrorCodes {
+        kNoInput = ${COMAD_NO_INPUT},
+        kUnknownCommand = ${COMAD_UNKNOWN_COMMAND},
+        kUnknownFlag = ${COMAD_UNKNOWN_FLAG},
+        kDupeOption = ${COMAD_DUPE_OPTION},
+        kInvalidValueParse = ${COMAD_INVALID_VALUE_PARSE},
+        kInvalidOptionValue = ${COMAD_INVALID_OPTION_VALUE},
+        kUnknownOption = ${COMAD_UNKNOWN_OPTION},
+        kMissingRequiredOptions = ${COMAD_MISSING_REQUIRED_OPTIONS}
+    };
 
-		enum ReturnCodes {
-			kOptionParsed = 0,
-			kOptionNotParsed
-		};
-	}
+    enum ReturnCodes {
+        kOptionParsed = 0,
+        kOptionNotParsed
+    };
 }
 
 #endif

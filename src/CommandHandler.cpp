@@ -1,148 +1,161 @@
 #include "CommandHandler.h"
 
-#include <charconv>
 #include <format>
 #include <span>
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <optional>
+#include <Logger.tcc>
+#include <utility>
 
 #include "ComadBuildOptions.h"
 
 using namespace std::string_view_literals;
 
-namespace comad {
-	namespace command {
-		using namespace value;
+namespace comad::command {
+	using namespace value;
+	using namespace logger;
 
-		bool detail::IsValueValid(const CommandOption& option, std::string_view value_str) {
-			const value::ValueType type = option.supported_values.GetValueType();
-			const ValueWrapper value = StringToValue(type, value_str);
+	bool detail::IsValueValid(const CommandOption& option, const ValueWrapper& value) {
+		const ValueType type = option.supported_values.GetValueType();
+		if (type != value.GetType()) return false;
 
-			switch (type)
-			{
-				case value::ValueType::kBool: return option.supported_values.IsValid(value.GetValue<bool>());
-				case value::ValueType::kInt: return option.supported_values.IsValid(value.GetValue<int>());
-				case value::ValueType::kFloat: return option.supported_values.IsValid(value.GetValue<float>());
-				case value::ValueType::kString: return option.supported_values.IsValid(value.GetValue<std::string>());
-				default: throw std::runtime_error{ "type is not supported." };
-			}
-		}
-
-		ValueWrapper detail::StringToValue(value::ValueType type, std::string_view value_str) {
-			using namespace build_options;
-
-			switch (type) 
-			{
-				case value::ValueType::kBool: {
-					std::string value_str_copy{ value_str };
-					std::transform(value_str_copy.begin(), value_str_copy.end(), value_str_copy.begin(),
-						[](unsigned char c) { return std::tolower(c);  });
-
-					if (value_str_copy == "0"sv || value_str_copy == "false"sv) {
-						return ValueWrapper{ false };
-					}
-					if (value_str_copy == "1"sv || value_str_copy == "true"sv) {
-						return ValueWrapper{ true };
-					}
-
-					throw std::runtime_error{ std::format("\"{}\" cannot be converted to bool", value_str) };
-				}
-				case value::ValueType::kInt: {
-					int value;
-					auto ptr = ThrowingFromChars(value_str.data(), value_str.data() + value_str.length(), value);
-
-					return ValueWrapper{ value };
-				}
-				case value::ValueType::kFloat: {
-					float value;
-					auto ptr = ThrowingFromChars(value_str.data(), value_str.data() + value_str.length(), value);
-
-					return ValueWrapper{ value };
-				}
-				case value::ValueType::kString: return ValueWrapper(std::string{ value_str });
-				default: throw std::runtime_error{ "type is not supported." };
-			}
-		}
-
-		int detail::ParseOption(std::string_view name,
-			std::string_view value,
-			const CommandNode& node,
-			ExecutionContext& ctx)
+		switch (type)
 		{
-			using namespace build_options;
-			using namespace detail;
+			case ValueType::kBool: return option.supported_values.IsValid(value.GetValue<bool>());
+			case ValueType::kInt: return option.supported_values.IsValid(value.GetValue<int>());
+			case ValueType::kFloat: return option.supported_values.IsValid(value.GetValue<float>());
+			case ValueType::kString: return option.supported_values.IsValid(value.GetValue<std::string>());
+			default: throw std::runtime_error{ "type is not supported." };
+		}
+	}
 
-			if (name.starts_with(OptionPrefix)) {
-				name.remove_prefix(OptionPrefix.length());
+	std::optional<ValueWrapper> detail::StringToValue(ValueType type, std::string_view str) {
+		using namespace build_options;
+
+		if (Verbose) {
+			comad_logger.MakeStream<LogLevel::DEBUG>()
+				<< "trying to parse " << ValueTypeNames.at(type) << " from " << str;
+		}
+		switch (type)
+		{
+			case ValueType::kBool: {
+				std::string value_str_copy{ str };
+				std::ranges::transform(value_str_copy, value_str_copy.begin(),
+				                       [](unsigned char c) { return std::tolower(c);  });
+
+				if (value_str_copy == "0"sv || value_str_copy == "false"sv) {
+					return std::make_optional<ValueWrapper>(false);
+				}
+				if (value_str_copy == "1"sv || value_str_copy == "true"sv) {
+					return std::make_optional<ValueWrapper>(true);
+				}
+
+				if constexpr (Verbose) {
+					comad_logger.MakeStream<LogLevel::ERROR>() << str << " cannot be converted to bool";
+				}
+				return std::nullopt;
 			}
-			else if (name.starts_with(ShortOptionPrefix)) {
-				name.remove_prefix(ShortOptionPrefix.length());
+			case ValueType::kInt: {
+				auto val = OptionalFromChars<int>(str);
 
-				if (node.HasShortOption(name[0])) {
-					name = node.GetShortOptionName(name[0]);
-				}
+				if (val == std::nullopt) return std::nullopt;
+				return std::make_optional<ValueWrapper>(val.value());
 			}
+			case ValueType::kFloat: {
+				auto val = OptionalFromChars<float>(str);
 
-			if (!node.HasOption(name)) {
-				if constexpr (!SkipUnknownOption) {
-					std::cerr << "unknown option " << name << std::endl;
-					return retc::kUnknownOption;
-				}
-				else {
-					return retc::kOptionNotParsed;
-				}
+				if (val == std::nullopt) return std::nullopt;
+				return std::make_optional<ValueWrapper>(val.value());
 			}
-
-			const CommandOption& option = node.GetOption(name);
-			if constexpr (!SkipDupeOption) {
-				if (ctx.options.find(name) != ctx.options.end()) {
-					std::cerr << "option " << name << " has already been passed";
-					return retc::kDupeOption;
-				}
+			case ValueType::kString: return std::make_optional<ValueWrapper>(std::string{ str });
+			default: {
+				if constexpr (Verbose) comad_logger.Error("type is not supported."sv);
+				return std::nullopt;
 			}
+		}
+	}
 
-			const value::SupportedValueHolder& option_values = option.supported_values;
-			try {
-				if (IsValueValid(option, value)) {
-					ctx.options.emplace(name,
-						StringToValue(option_values.GetValueType(), value));
+	int detail::ParseOption(std::string_view name,
+		std::string_view value,
+		const CommandNode& node,
+		ExecutionContext& ctx)
+	{
+		using namespace build_options;
+		using namespace detail;
 
-					ctx.required_option_count += option.required;
+		auto debug_stream = comad_logger.MakeStream<LogLevel::DEBUG>();
+		auto error_stream = comad_logger.MakeStream<LogLevel::ERROR>();
 
-					return retc::kOptionParsed;
-				}
-				else if (option.required) {
-					std::cerr << "invalid value " << value << std::endl;
-					return retc::kInvalidOptionValue;
-				}
+		if (name.starts_with(OptionPrefix)) {
+			name.remove_prefix(OptionPrefix.length());
+
+			if constexpr (Verbose) debug_stream << "searching for option with name " << name << std::flush;
+		}
+		else if (name.starts_with(ShortOptionPrefix)) {
+			name.remove_prefix(ShortOptionPrefix.length());
+
+			if (node.HasShortOption(name[0])) {
+				if constexpr (Verbose)  debug_stream << "searching for option with short name " << name[0] << std::flush;
+				name = node.GetShortOptionName(name[0]);
+			}
+			if constexpr (Verbose) debug_stream << "searching for option with short name " << name << std::flush;
+		}
+
+		if (!node.HasOption(name)) {
+			if constexpr (!SkipUnknownOption) {
+				if constexpr (Verbose) error_stream << "unknown option " << name << std::flush;
+				return retc::kUnknownOption;
+			}
+			else {
 				return retc::kOptionNotParsed;
 			}
-			catch (const std::exception& ex) {
-				if constexpr (!SkipInvalidValueParse) {
-					std::cerr << "failed to parse required option\n" << ex.what() << std::endl;
-					return retc::kInvalidValueParse;
-				}
-				else {
-					return retc::kOptionNotParsed;
-				}
+		}
+
+		const CommandOption& option = node.GetOption(name);
+		if constexpr (!SkipDupeOption) {
+			if (ctx.options.contains(name)) {
+				if constexpr (Verbose) error_stream << "option " << name << " has already been passed" << std::flush;
+				return retc::kDupeOption;
 			}
 		}
 
-		CommandNode& CommandHandler::GetCommandNode() noexcept {
-			return node_;
+		const SupportedValueHolder& option_values = option.supported_values;
+		auto wrapped = StringToValue(option_values.GetValueType(), value);
+		if (wrapped == std::nullopt) {
+			if constexpr (!SkipInvalidValueParse) {
+				if constexpr (Verbose) error_stream << "failed to parse value for option " << name << std::flush;
+				return retc::kInvalidValueParse;
+			}
+			else {
+				return retc::kOptionNotParsed;
+			}
 		}
+		if (IsValueValid(option, *wrapped)) {
+			ctx.options.emplace(name, std::move(*wrapped));
 
-		const CommandNode& CommandHandler::GetCommandNode() const noexcept {
-			return node_;
+			ctx.required_option_count += option.required;
+			return retc::kOptionParsed;
 		}
+		if constexpr (Verbose) error_stream << "invalid value " << value << " for option " << name << std::flush;
 
-		void CommandHandler::SetCommandNode(CommandNode node) noexcept {
-			node_ = node;
-		}
+		return retc::kInvalidOptionValue;
+	}
 
-		int CommandHandler::HandleCommand(int argc, const char** argv) const {
-			return HandleCommand(std::span<const char*>(argv, argc));
-		}
+	CommandNode& CommandHandler::GetCommandNode() noexcept {
+		return node_;
+	}
+
+	const CommandNode& CommandHandler::GetCommandNode() const noexcept {
+		return node_;
+	}
+
+	void CommandHandler::SetCommandNode(CommandNode node) noexcept {
+		node_ = std::move(node);
+	}
+
+	int CommandHandler::HandleCommand(int argc, const char** argv) const {
+		return HandleCommand(std::span<const char*>(argv, argc));
 	}
 }

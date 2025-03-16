@@ -1,5 +1,5 @@
-#ifndef COMMAND_NODE_H_
-#define COMMAND_NODE_H_
+#ifndef COMAD_COMMAND_NODE_H_
+#define COMAD_COMMAND_NODE_H_
 
 #include <ranges>
 #include <string>
@@ -9,82 +9,84 @@
 
 #include "Command.h"
 
-namespace comad {
-	namespace command {
-		template <typename T>
-		concept PassableType = std::is_same_v<T, CommandFlag> ||
-			std::is_same_v<T, CommandArgument> ||
-			std::is_convertible_v<T, std::pair<std::string_view, CommandOption>>;
+namespace comad::command {
+	template <typename T>
+	concept CommandPassable = std::is_same_v<T, CommandFlag> ||
+		std::is_same_v<T, CommandArgument> ||
+		std::is_convertible_v<T, std::pair<std::string_view, CommandOption>>;
 
 
-		class CommandNode {
-		public:
-			CommandNode();
-			CommandNode(CommandTemplate cmd_template, CommandExecutor executor);
+	class CommandNode {
+	public:
+		CommandNode();
+		CommandNode(CommandTemplate cmd_template, CommandExecutor executor);
 
+		CommandNode(const CommandNode&) = delete;
+		CommandNode(CommandNode&&) = default;
+		CommandNode& operator=(const CommandNode&) = delete;
+		CommandNode& operator=(CommandNode&&) = default;
 
-			bool AddNode(std::string_view name);
-			bool AddNode(std::string_view name, CommandTemplate cmd_template, CommandExecutor executor);
-			
-			[[nodiscard]] std::string_view GetName() const noexcept;
-			[[nodiscard]] bool HasOption(std::string_view option_name) const noexcept;
-			[[nodiscard]] const CommandOption& GetOption(std::string_view option_name) const;
-			[[nodiscard]] int GetRequiredOptionCount() const noexcept;
+		bool AddNode(std::string_view name);
+		bool AddNode(std::string_view name, CommandTemplate cmd_template, CommandExecutor executor);
 
-			[[nodiscard]] bool HasChild(std::string_view name) const noexcept;
-			[[nodiscard]] CommandNode& GetChild(std::string_view name);
-			[[nodiscard]] const CommandNode& GetChild(std::string_view name) const;
-			[[nodiscard]] bool HasChildAlias(std::string_view name) const noexcept;
-			[[nodiscard]] std::string_view GetChildNameFromAlias(std::string_view alias) const;
-			[[nodiscard]] bool HasShortOption(char short_name) const noexcept;
-			[[nodiscard]] const std::string& GetShortOptionName(char short_name) const;
+		[[nodiscard]] std::string_view GetName() const noexcept;
+		[[nodiscard]] bool HasOption(std::string_view option_name) const noexcept;
+		[[nodiscard]] const CommandOption& GetOption(std::string_view option_name) const;
+		[[nodiscard]] int GetRequiredOptionCount() const noexcept;
 
-			[[nodiscard]] bool HasParent() const noexcept;
-			[[nodiscard]] const CommandNode& GetParent() const;
+		[[nodiscard]] bool HasChild(std::string_view name) const noexcept;
+		[[nodiscard]] CommandNode& GetChild(std::string_view name);
+		[[nodiscard]] const CommandNode& GetChild(std::string_view name) const;
+		[[nodiscard]] bool HasChildAlias(std::string_view name) const noexcept;
+		[[nodiscard]] std::string_view GetChildNameFromAlias(std::string_view alias) const;
+		[[nodiscard]] bool HasShortOption(char short_name) const noexcept;
+		[[nodiscard]] const std::string& GetShortOptionName(char short_name) const;
 
-			bool Remove(std::string_view name);
+		[[nodiscard]] bool HasParent() const noexcept;
+		[[nodiscard]] const CommandNode& GetParent() const;
 
-			void SetTemplate(CommandTemplate cmd_template);
-			[[nodiscard]] const CommandTemplate& GetTemplate() const noexcept;
+		bool Remove(std::string_view name);
 
-			[[nodiscard]] const std::map<std::string, std::string, std::less<>>& GetChildAliasMapping() const noexcept;
-			[[nodiscard]] const std::map<char, std::string, std::less<>>& GetShortOptionMapping() const noexcept;
+		void SetTemplate(CommandTemplate cmd_template);
+		[[nodiscard]] const CommandTemplate& GetTemplate() const noexcept;
 
-			void SetExecutor(CommandExecutor executor) noexcept;
-			[[nodiscard]] CommandExecutor GetExecutor() const noexcept;
+		[[nodiscard]] const std::map<std::string, std::string, std::less<>>& GetChildAliasMapping() const noexcept;
+		[[nodiscard]] const std::map<char, std::string, std::less<>>& GetShortOptionMapping() const noexcept;
 
-			void SetCommand(CommandTemplate cmd_template, CommandExecutor executor);
+		void SetExecutor(CommandExecutor executor) noexcept;
+		[[nodiscard]] CommandExecutor GetExecutor() const noexcept;
 
-			CommandNode& operator>>(std::string_view cmd);
-			CommandNode& operator=(CommandExecutor executor);
+		void SetCommand(CommandTemplate cmd_template, CommandExecutor executor);
 
-			CommandNode& operator|(std::string_view alias);
+		CommandNode& operator>>(std::string_view cmd);
+		CommandNode& operator=(CommandExecutor executor);
 
-			template <std::ranges::input_range Range> requires std::is_constructible_v<std::string, std::ranges::range_value_t<Range>>
-			CommandNode& operator|(const Range& range);
+		CommandNode& operator|(std::string_view alias);
 
-			template <std::ranges::input_range Range> requires std::is_constructible_v<std::string, std::ranges::range_value_t<Range>>
-			CommandNode& operator|(Range&& range);
+		template <std::ranges::input_range Range> requires std::is_constructible_v<std::string, std::ranges::range_value_t<Range>>
+		CommandNode& operator|(const Range& range);
 
-			template <PassableType... Passables>
-			CommandNode& operator()(Passables&&... passables);
+		template <std::ranges::input_range Range> requires std::is_constructible_v<std::string, std::ranges::range_value_t<Range>>
+		CommandNode& operator|(Range&& range);
 
-		private:
-			std::map<std::string, CommandNode, std::less<>> sub_nodes_{};
-			std::map<std::string, std::string, std::less<>> alias_to_name_{};
-			std::map<char, std::string, std::less<>> short_to_full_opt_{};
+		template <CommandPassable... Passables>
+		CommandNode& operator()(Passables&&... passables);
 
-			std::string_view name_{""};
-			CommandNode* parent_{ nullptr };
-			CommandTemplate cmd_template_{};
-			CommandExecutor executor_{ nullptr };
-			int required_option_count_{ 0 };
+	private:
+		std::map<std::string, CommandNode, std::less<>> sub_nodes_{};
+		std::map<std::string, std::string, std::less<>> alias_to_name_{};
+		std::map<char, std::string, std::less<>> short_to_full_opt_{};
 
-			CommandNode(std::reference_wrapper<CommandNode> parent, std::string_view name);
+		std::string_view name_{""};
+		CommandNode* parent_{ nullptr };
+		CommandTemplate cmd_template_{};
+		CommandExecutor executor_{ nullptr };
+		int required_option_count_{ 0 };
 
-			void ChildUpdated(std::string_view child_name);
-		};
-	}
+		CommandNode(std::reference_wrapper<CommandNode> parent, std::string_view name);
+
+		void ChildUpdated(std::string_view child_name);
+	};
 }
 
 #include "CommandNode.tcc"

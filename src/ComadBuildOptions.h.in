@@ -9,27 +9,31 @@
 #cmakedefine01 COMAD_SKIP_UNKNOWN_OPTIONS
 #cmakedefine01 COMAD_ALLOW_PARTIAL_NUMBER_PARSING
 #cmakedefine01 COMAD_SKIP_INVALID_PARSING
+#cmakedefine01 COMAD_CACHE_EXTRA_ARGS
+#cmakedefine01 COMAD_VERBOSE
 
-namespace comad {
-	namespace build_options {
-		inline constexpr bool SkipUnknownFlag = COMAD_SKIP_UNKNOWN_FLAGS;
-		inline constexpr bool SkipDupeOption = COMAD_SKIP_DUPE_OPTIONS;
-		inline constexpr bool SkipUnknownOption = COMAD_SKIP_UNKNOWN_OPTIONS;
-		inline constexpr bool AllowPartialNumberParsing = COMAD_ALLOW_PARTIAL_NUMBER_PARSING;
-		inline constexpr bool SkipInvalidValueParse = COMAD_SKIP_INVALID_PARSING;
+namespace comad::build_options {
+    inline constexpr bool SkipUnknownFlag = COMAD_SKIP_UNKNOWN_FLAGS;
+    inline constexpr bool SkipDupeOption = COMAD_SKIP_DUPE_OPTIONS;
+    inline constexpr bool SkipUnknownOption = COMAD_SKIP_UNKNOWN_OPTIONS;
+    inline constexpr bool AllowPartialNumberParsing = COMAD_ALLOW_PARTIAL_NUMBER_PARSING;
+    inline constexpr bool SkipInvalidValueParse = COMAD_SKIP_INVALID_PARSING;
+    inline constexpr bool CacheExtraArgs = COMAD_CACHE_EXTRA_ARGS;
+    inline constexpr bool Verbose = COMAD_VERBOSE;
 
-		inline constexpr std::string_view FlagPrefix{ "${COMAD_FLAG_PREFIX}" };
-		inline constexpr std::string_view OptionPrefix{ "${COMAD_OPTION_PREFIX}" };
-		inline constexpr std::string_view ShortOptionPrefix{ "${COMAD_OPTION_SHORT_PREFIX}" };
+    inline constexpr std::string_view FlagPrefix{ "${COMAD_FLAG_PREFIX}" };
+    inline constexpr std::string_view OptionPrefix{ "${COMAD_OPTION_PREFIX}" };
+    inline constexpr std::string_view ShortOptionPrefix{ "${COMAD_OPTION_SHORT_PREFIX}" };
 
-		inline constexpr std::size_t kMaxCStringLength = ${COMAD_MAX_CSTR_LENGTH};
-	};
-}
+    inline constexpr std::size_t kMaxCStringLength = ${COMAD_MAX_CSTR_LENGTH};
+};
 
 #undef COMAD_SKIP_UNKNOWN_OPTIONS
 #undef COMAD_SKIP_UNKNOWN_FLAGS
 #undef COMAD_SKIP_DUPE_OPTIONS
 #undef COMAD_ALLOW_PARTIAL_NUMBER_PARSING
 #undef COMAD_SKIP_INVALID_PARSING
+#undef COMAD_CACHE_EXTRA_ARGS
+#undef COMAD_VERBOSE
 
 #endif

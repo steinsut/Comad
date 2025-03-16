@@ -63,6 +63,8 @@ int main(int argc, char** argv) {
 	handler.GetCommandNode() >> "baz" = ...
 
 	more commands...
+	
+	handler.HandleCommand(argc - 1, argv + 1);
 }
 ```
 
@@ -72,17 +74,17 @@ conditional chains and/or figuring out a way of streamlining this process by
 writing their own miniature command handling library.
 
 Comad tries to do this with a syntax that feels natural to use
-with the help of operator overloads and literals. If desired, command chains can be defined
+with the help of operator overloads and user literals. If desired, command chains can be defined
 using the short syntax like in the example. The classes actually used in defining and
 using command chains have public methods that can be used to interact with them.
 
 ## What else before 1.0 ?
 - [ ] Preprocessing Command Input (e.g. combining strings between quotes into a single element)
 - [ ] Alternative methods for operator overloads
-- [ ] Logging
+- [x] Logging
 - [ ] Documentation
 - [ ] More Tests
-- [ ] CMake Packing
+- [x] CPack Support
 - [ ] GitHub Workflow
 
 **NOTE: THERE MAY BE ANY NUMBER OF BREAKING CHANGES UNTIL 1.0**

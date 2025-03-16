@@ -1,0 +1,17 @@
+@PACKAGE_INIT@
+
+get_filename_component(PACKAGE_PREFIX_DIR "${CMAKE_CURRENT_LIST_DIR}/../" ABSOLUTE)
+
+macro(guard VAR access value current_list_file stack)
+	if(${access} STREQUAL "MODIFIED_ACCESS")
+		message(${_IMPORT_PREFIX})
+		set(${VAR} ${PACKAGE_PREFIX_DIR})
+	endif()
+endmacro()
+
+set(_IMPORT_PREFIX ${PACKAGE_PREFIX_DIR})
+variable_watch(_IMPORT_PREFIX guard)
+
+include("${CMAKE_CURRENT_LIST_DIR}/ComadTargets.cmake")
+
+check_required_components(Comad)

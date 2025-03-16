@@ -1,7 +1,5 @@
 #include <string_view>
-#include <initializer_list>
 #include <iostream>
-#include <span>
 
 #include "Comad.h"
 
@@ -10,6 +8,7 @@ int main() {
 	using namespace comad::command;
 	using namespace comad::literals;
 	using namespace comad::value;
+	using namespace comad::logger;
 	using namespace std::string_view_literals;
 	using namespace std::string_literals;
 
@@ -17,7 +16,24 @@ int main() {
 
 	std::cout << "comad version " << version << std::endl << std::endl;
 
+	//test logger behaviour
+	Logger logger{
+		{.info = {std::ref(std::cout)},
+				.debug = {std::ref(std::cout)},
+				.error = {std::ref(std::cerr)}},
+		"comad: [{0:M}] ({1:%F}T{1:%R%z}) {2:%F:%L:%C/}: {3}",
+		LogLevelSpecifier{},
+		TimeSpecifier{},
+		SourceLocationSpecifier{},
+		MessageSpecifier{}};
+
+	logger.Info("Testing logger with log level info from log method");
+	logger.MakeStream<LogLevel::DEBUG>() << "Testing logger with " << "log level debug " << "from stream ";
+	logger.MakeStream<LogLevel::ERROR>() << "Testing logger with log level error from stream" << std::endl;
+
 	bool failed = false;
+
+
 
 	//test simple command parsing
 	CommandHandler parse_test{};
@@ -76,7 +92,7 @@ int main() {
 
 	(arg_test.GetCommandNode() >> "test5"sv)("bool"_ab, "integer"_ai, "float"_af, "string"_as) = [](const ExecutionContext& ctx) {
 		float arg_test_float{};
-		std::string_view arg_test_float_str = "1.0f"sv;
+		std::string_view arg_test_float_str = "1.0"sv;
 		std::from_chars(arg_test_float_str.data(), arg_test_float_str.data() + arg_test_float_str.length(), arg_test_float);
 
 		if (ctx.args.find("bool"sv)->second.GetValue<bool>() &&
