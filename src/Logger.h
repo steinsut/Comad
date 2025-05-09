@@ -85,6 +85,7 @@ namespace comad::logger {
 		template <LogLevel L>
 		class Streamable {
 		public:
+			bool IsLoggerAlive();
 			void UpdateSourceLocation(std::source_location loc = std::source_location::current());
 
 			template <typename T>

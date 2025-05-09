@@ -188,6 +188,12 @@ namespace comad::logger {
 
 	template<LoggableCharType CharT, typename ... FmtTypes> requires (Formattable<FmtTypes, CharT> && ...)
 	template<LogLevel L>
+	bool Logger<CharT, FmtTypes...>::Streamable<L>::IsLoggerAlive() {
+		return logger_alive_.expired() || !*logger_alive_.lock();
+	}
+
+	template<LoggableCharType CharT, typename ... FmtTypes> requires (Formattable<FmtTypes, CharT> && ...)
+	template<LogLevel L>
 	void Logger<CharT, FmtTypes...>::Streamable<L>::UpdateSourceLocation(std::source_location loc) {
 		loc_ = loc;
 	}
@@ -294,7 +300,7 @@ namespace comad::logger {
 		}, specifiers_);
 		if constexpr (L == LogLevel::DEBUG) {
 #ifdef NDEBUG
-			return
+			return;
 #endif
 		}
 
